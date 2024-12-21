@@ -86,7 +86,7 @@ async def get_form():
                         }})
                         .then(response => response.json())
                         .then(data => {{
-                            alert(data.message);
+                            //alert(data.message);
                         }});
                     }}
                 </script>
@@ -264,10 +264,11 @@ def background_task(input_email):
                 retry = 99
                 captcha_1 = "等待手动"
                 print("自动处理验证码失败")
-                print("开始等待手动id....")
+                # print("开始等待手动id....")
+                background_task(input_email)
             else:
                 captcha_1 = max(capt, key=capt.get)
-                print("captcha_1", captcha_1, "次数:", capt.get(captcha_1))
+                print("\ncaptcha_1", captcha_1, "次数:", capt.get(captcha_1))
 
             print("captcha_0", captcha_0)
             cache[input_email] = {"auto": captcha_1}
@@ -278,15 +279,17 @@ def background_task(input_email):
                     print(f"手动id：{ids} 自动：{captcha_1}")
                     captcha_1 = ids
                     break
-                time.sleep(1)
+                time.sleep(0.5)
 
             data = f"csrfmiddlewaretoken={csrftoken}&first_name={first_name}&last_name={last_name}&username={username}&email={quote(email)}&captcha_0={captcha_0}&captcha_1={captcha_1}&question=0&tos=on"
             time.sleep(random.uniform(0.5, 1.2))
-            logger.info("请求信息")
+            logger.info("最终请求")
             resp = session.post(url=url3, headers=dict(header3, **{"Cookie": header3["Cookie"].format(csrftoken)}),
                                 data=data, impersonate="chrome124")
             print(resp.status_code)
             print(resp.text)
+            if(resp.status_code == 500):
+                background_task(input_email)
             content = resp.json()
             if content.get("captcha") and content["captcha"][0] == "Invalid CAPTCHA":
                 captcha_0 = content["__captcha_key"]
